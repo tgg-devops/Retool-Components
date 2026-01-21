@@ -1,7 +1,7 @@
 // src/Gantt/App.tsx
 import React, { FunctionComponent, useMemo, useRef } from 'react';
 import { BryntumGantt as BryntumGanttReact } from '@bryntum/gantt-react';
-import { makeGanttConfig, DEFAULT_TIMELINE_DATA } from './GanttConfig';
+import { makeGanttConfig, DEFAULT_TIMELINE_DATA } from './CreateGanttConfig.ts';
 import './App.scss';
 
 const App: FunctionComponent = () => {

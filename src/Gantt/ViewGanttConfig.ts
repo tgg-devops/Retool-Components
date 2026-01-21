@@ -1,4 +1,3 @@
-// src/Gantt/GanttConfig.ts
 import type {
   TaskModelConfig,
   DependencyModelConfig,
@@ -45,7 +44,7 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
   })
 
   const config = {
-    readOnly: false,
+    readOnly: true,
 
     startDate,
     endDate,
@@ -54,16 +53,16 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
       { type: 'name', field: 'name', width: 200 },
 
       // ✅ Single "Assigned To" column:
-      // - if assignedIndividual is set -> show that
+      // - if assignedTo is set -> show that
       // - else show assignedTeam
       {
         text: 'Assigned To',
-        field: 'assignedIndividual', // field can be anything; renderer controls display
+        field: 'assignedTo', // field can be anything; renderer controls display
         width: 120,
         renderer: ({ record }: { record: any }) => {
-          const person = (record.assignedIndividual ?? '').toString().trim()
+          const person = (record.assignedUserLabel ?? '').toString().trim()
           if (person) return person
-          const team = (record.assignedTeam ?? '').toString().trim()
+          const team = (record.assignedTeamLabel ?? '').toString().trim()
           return team || ''
         },
       },
@@ -71,7 +70,7 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
       // ✅ Cost column
       {
         text: 'Cost',
-        field: 'cost',
+        field: 'projectedCost',
         width: 120,
         align: 'end',
         renderer: ({ value }: { value: unknown }) => {
@@ -86,33 +85,8 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
     barMargin: 10,
 
     features: {
-      taskDrag  : true,
-      taskResize: true,
-
-      // keep task editor and include the raw fields (so edits persist in project.changes)
-      taskEdit  : {
-        items: {
-          generalTab: {
-            items: {
-              assignedTeam: {
-                type: 'text',
-                name: 'assignedTeam',
-                label: 'Assigned Team',
-              },
-              assignedIndividual: {
-                type: 'text',
-                name: 'assignedIndividual',
-                label: 'Assigned Person',
-              },
-              cost: {
-                type: 'number',
-                name: 'cost',
-                label: 'Cost',
-              },
-            },
-          },
-        },
-      },
+      taskDrag  : false,
+      taskResize: false,
     },
 
     project: {
