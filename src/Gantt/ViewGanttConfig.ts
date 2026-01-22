@@ -26,7 +26,7 @@ export const DEFAULT_TIMELINE_DATA: TimelineData = {
   calendars: { rows: [] },
 }
 
-export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGanttProps {
+export function viewGanttConfig(raw: TimelineData | null | undefined): BryntumGanttProps {
   const data: TimelineData = raw ?? DEFAULT_TIMELINE_DATA
 
   const project: ProjectModelConfig = data.project ?? {}
@@ -57,7 +57,7 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
       // - else show assignedTeam
       {
         text: 'Assigned To',
-        field: 'assignedTo', // field can be anything; renderer controls display
+        field: 'assignedTp', // field can be anything; renderer controls display
         width: 120,
         renderer: ({ record }: { record: any }) => {
           const person = (record.assignedUserLabel ?? '').toString().trim()
@@ -87,6 +87,10 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
     features: {
       taskDrag  : false,
       taskResize: false,
+
+      // keep task editor and include the raw fields (so edits persist in project.changes)
+      taskEdit  : false
+
     },
 
     project: {
