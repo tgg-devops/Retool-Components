@@ -14,6 +14,31 @@ export interface TimelineData {
   calendars?: { rows: CalendarModelConfig[] }
 }
 
+function findDateRange(rows: any[]): { min?: Date; max?: Date } {
+  let min: Date | undefined
+  let max: Date | undefined
+
+  const walk = (n: any) => {
+      if (!n) return
+      if (n.startDate) {
+        const s = new Date(n.startDate)
+        if (!Number.isNaN(s.getTime())) {
+          if (!min || s < min) min = s
+        }
+      }
+      if (n.endDate) {
+        const e = new Date(n.endDate)
+        if (!Number.isNaN(e.getTime())) {
+          if (!max || e > max) max = e
+        }
+      }
+      if (Array.isArray(n.children)) n.children.forEach(walk)
+    }
+
+  ;(rows || []).forEach(walk)
+  return { min, max }
+}
+
 export const DEFAULT_TIMELINE_DATA: TimelineData = {
   project: {
     calendar    : 'general',
@@ -27,6 +52,7 @@ export const DEFAULT_TIMELINE_DATA: TimelineData = {
   calendars: { rows: [] },
 }
 
+// ✅ your existing editable config (keep as-is)
 export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGanttProps {
   const data: TimelineData = raw ?? DEFAULT_TIMELINE_DATA
 
@@ -52,14 +78,11 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
 
     columns: [
       { type: 'name', field: 'name', width: 200 },
-
-      // ✅ Single "Assigned To" column:
-      // - if assignedTo is set -> show that
-      // - else show assignedTeam
       {
         text: 'Assigned To',
-        field: 'assignedTp', // field can be anything; renderer controls display
+        field: 'assignedTp',
         width: 120,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         renderer: ({ record }: { record: any }) => {
           const person = (record.assignedUserLabel ?? '').toString().trim()
           if (person) return person
@@ -67,8 +90,6 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
           return team || ''
         },
       },
-
-      // ✅ Cost column
       {
         text: 'Cost',
         field: 'projectedCost',
@@ -88,8 +109,6 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
     features: {
       taskDrag  : true,
       taskResize: true,
-
-      // keep task editor and include the raw fields (so edits persist in project.changes)
       taskEdit  : {
         items: {
           generalTab: {
@@ -126,3 +145,25 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
 
   return config as unknown as BryntumGanttProps
 }
+
+export function makeViewGanttConfig(raw: TimelineData | null | undefined): BryntumGanttProps {
+  const base = makeGanttConfig(raw) as any
+
+  const taskRows = base.project?.tasksData ?? []
+  const { min, max } = findDateRange(taskRows)
+
+  base.startDate = min ?? base.startDate
+  base.endDate   = max ?? base.endDate
+
+  base.readOnly = false
+  base.features = {
+    taskDrag: false,
+    taskResize: false,
+    taskEdit: false,
+    percentBar: false,
+  }
+
+  return base as unknown as BryntumGanttProps
+}
+
+
