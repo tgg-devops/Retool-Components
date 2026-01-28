@@ -1,9 +1,8 @@
-// src/index.tsx
-import React, { useMemo, useCallback, memo, useRef, useEffect } from 'react'
+import React, { useMemo, memo, useRef, useEffect } from 'react'
 import { BryntumGantt as BryntumGanttBase } from '@bryntum/gantt-react'
 import { Retool } from '@tryretool/custom-component-support'
 
-import { viewGanttConfig, DEFAULT_TIMELINE_DATA, type TimelineData } from './ViewGanttConfig'
+import { makeViewGanttConfig, DEFAULT_TIMELINE_DATA, type TimelineData } from './CreateGanttConfig'
 
 import '@bryntum/gantt/fontawesome/css/fontawesome.css'
 import '@bryntum/gantt/fontawesome/css/solid.css'
@@ -11,6 +10,17 @@ import '@bryntum/gantt/gantt.css'
 import '@bryntum/gantt/svalbard-light.css'
 
 import './App.scss'
+
+const MemoGantt = memo(BryntumGanttBase)
+
+function collapseAllExpandedFlags(rows: any[]): any[] {
+  const walk = (node: any): any => {
+    const copy = { ...node, expanded: false }
+    if (Array.isArray(copy.children)) copy.children = copy.children.map(walk)
+    return copy
+  }
+  return (rows || []).map(walk)
+}
 
 function coerceToTimelineData(value: unknown): TimelineData {
   if (!value || typeof value !== 'object') return DEFAULT_TIMELINE_DATA
@@ -21,62 +31,51 @@ function coerceToTimelineData(value: unknown): TimelineData {
   const deps    = (obj.dependencies || DEFAULT_TIMELINE_DATA.dependencies) as TimelineData['dependencies']
   const cals    = (obj.calendars || DEFAULT_TIMELINE_DATA.calendars) as TimelineData['calendars']
 
-  return { project, tasks, dependencies: deps, calendars: cals }
+  const collapsedTasks = {
+    rows: collapseAllExpandedFlags(((tasks as any)?.rows as any[]) || []),
+  }
+
+  return { project, tasks: collapsedTasks as any, dependencies: deps, calendars: cals }
 }
 
-const MemoGantt = memo(BryntumGanttBase)
-
 export const ViewGanttImpl: React.FC = () => {
-  // INPUT from Retool
   const [timelineDataState] = Retool.useStateObject({ name: 'timelineData' })
 
-  // ✅ Always derive current timeline from Retool state
   const timelineData: TimelineData = useMemo(
     () => coerceToTimelineData(timelineDataState as unknown),
     [timelineDataState]
   )
 
-  // OUTPUT to Retool (persistable diff JSON)
-  const [, setFinalTimelineJson] = Retool.useStateString({
-    name: 'finalTimeline',
-    initialValue: '{}',
-  })
-
-  // Reset finalTimeline when component mounts
-  useEffect(() => {
-    setFinalTimelineJson('{}')
-  }, [setFinalTimelineJson])
-
-  const ganttRef = useRef<any>(null)
-
-  // Build read-only config from *current* timelineData
   const ganttConfig = useMemo(
-    () => viewGanttConfig(timelineData),
+    () => makeViewGanttConfig(timelineData),
     [timelineData]
   )
 
-  // Whenever Bryntum data changes, write persistable diff to finalTimeline
-  const handleDataChange = useCallback(() => {
-    const ganttInstance = ganttRef.current?.instance
-    const project = ganttInstance?.project
-    if (!project) return
+  // ✅ add a ref so we can call zoomToFit
+  const ganttRef = useRef<any>(null)
 
-    const changes = project.changes ?? project.changesData ?? {}
+  // ✅ zoom out to fit the whole project span
+  useEffect(() => {
+    const inst = ganttRef.current?.instance
+    if (!inst || typeof inst.zoomToFit !== 'function') return
 
-    setFinalTimelineJson(
-      JSON.stringify({
-        timestamp: new Date().toISOString(),
-        changes,
-      })
-    )
-  }, [setFinalTimelineJson])
+    // Wait a tick so Bryntum has laid out the time axis
+    requestAnimationFrame(() => {
+      inst.zoomToFit({ leftMargin: 40, rightMargin: 40, animate: false })
+    })
+  }, [timelineDataState])
 
   return (
     <div style={{ height: '100%', width: '100%' }}>
       <MemoGantt
         ref={ganttRef}
         {...ganttConfig}
-        onDataChange={handleDataChange}
+
+        // hard stops
+        onBeforeTaskDrag={() => false}
+        onBeforeTaskResize={() => false}
+        onBeforeTaskEdit={() => false}
+        onBeforePercentBarResize={() => false}
       />
     </div>
   )
