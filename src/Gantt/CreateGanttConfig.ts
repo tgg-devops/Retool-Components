@@ -165,5 +165,3 @@ export function makeViewGanttConfig(raw: TimelineData | null | undefined): Brynt
 
   return base as unknown as BryntumGanttProps
 }
-
-

@@ -1,5 +1,6 @@
 /* src/Gantt/App.scss */
-
+import '@bryntum/taskboard/taskboard.css';
+import '@bryntum/taskboard/svalbard-light.css';
 /* Make the Bryntum gantt element fill its container */
 .b-gantt {
     height: 100%;
