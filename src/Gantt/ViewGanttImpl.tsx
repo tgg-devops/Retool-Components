@@ -27,58 +27,72 @@ function coerceToTimelineData(value: unknown): TimelineData {
   const obj = value as Record<string, unknown>
 
   const project = (obj.project || DEFAULT_TIMELINE_DATA.project) as TimelineData['project']
-  const tasks   = (obj.tasks || DEFAULT_TIMELINE_DATA.tasks) as TimelineData['tasks']
-  const deps    = (obj.dependencies || DEFAULT_TIMELINE_DATA.dependencies) as TimelineData['dependencies']
-  const cals    = (obj.calendars || DEFAULT_TIMELINE_DATA.calendars) as TimelineData['calendars']
+  const tasks = (obj.tasks || DEFAULT_TIMELINE_DATA.tasks) as TimelineData['tasks']
+  const deps = (obj.dependencies || DEFAULT_TIMELINE_DATA.dependencies) as TimelineData['dependencies']
+  const cals = (obj.calendars || DEFAULT_TIMELINE_DATA.calendars) as TimelineData['calendars']
 
-  // ✅ NEW
   const peopleMap = (obj.peopleMap || DEFAULT_TIMELINE_DATA.peopleMap) as TimelineData['peopleMap']
 
   const collapsedTasks = {
     rows: collapseAllExpandedFlags(((tasks as any)?.rows as any[]) || []),
   }
 
-  // ✅ include peopleMap
   return { project, tasks: collapsedTasks as any, dependencies: deps, calendars: cals, peopleMap }
 }
-
 
 export const ViewGanttImpl: React.FC = () => {
   const [timelineDataState] = Retool.useStateObject({ name: 'timelineData' })
   const [peopleMapState] = Retool.useStateObject({ name: 'peopleMap' })
 
-
   const timelineData: TimelineData = useMemo(() => {
     const base = coerceToTimelineData(timelineDataState as unknown)
-    const pm   = (peopleMapState && typeof peopleMapState === 'object') ? (peopleMapState as any) : {}
+    const pm = peopleMapState && typeof peopleMapState === 'object' ? (peopleMapState as any) : {}
     return { ...base, peopleMap: pm }
   }, [timelineDataState, peopleMapState])
 
-  const ganttConfig = useMemo(
-    () => makeViewGanttConfig(timelineData),
-    [timelineData]
-  )
+  const ganttConfig = useMemo(() => makeViewGanttConfig(timelineData), [timelineData])
 
-  // ✅ add a ref so we can call zoomToFit
+  // Bryntum instance ref (for zoomToFit)
   const ganttRef = useRef<any>(null)
+
+  // ✅ Wrapper ref used to hard-disable right-click inside the Gantt
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
 
   // ✅ zoom out to fit the whole project span
   useEffect(() => {
     const inst = ganttRef.current?.instance
     if (!inst || typeof inst.zoomToFit !== 'function') return
 
-    // Wait a tick so Bryntum has laid out the time axis
     requestAnimationFrame(() => {
       inst.zoomToFit({ leftMargin: 40, rightMargin: 40, animate: false })
     })
   }, [timelineDataState])
 
+  // ✅ HARD KILL SWITCH: disable ALL right-click menus inside the gantt (capture phase)
+  useEffect(() => {
+    const root = wrapperRef.current
+    if (!root) return
+
+    const killContextMenu = (e: MouseEvent) => {
+      if (!root.contains(e.target as Node)) return
+
+      e.preventDefault()
+      e.stopPropagation()
+      ;(e as any).stopImmediatePropagation?.()
+      return false
+    }
+
+    document.addEventListener('contextmenu', killContextMenu, true) // capture = true
+    return () => {
+      document.removeEventListener('contextmenu', killContextMenu, true)
+    }
+  }, [])
+
   return (
-    <div style={{ height: '100%', width: '100%' }}>
+    <div ref={wrapperRef} style={{ height: '100%', width: '100%' }}>
       <MemoGantt
         ref={ganttRef}
         {...ganttConfig}
-
         // hard stops
         onBeforeTaskDrag={() => false}
         onBeforeTaskResize={() => false}

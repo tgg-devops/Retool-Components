@@ -102,8 +102,16 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
     features : {
       taskDrag   : true,
       taskResize : true,
-      labels     : true   // 🔑 REQUIRED
+      labels     : true,
+      timeRanges : true   // ✅ enable feature
     },
+
+    timeRangesFeature : {
+      showCurrentTimeLine : {
+        name : 'Today'
+      }
+    },
+
 
     labelsFeature : {
       after : {
@@ -124,6 +132,7 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
       dependenciesData   : deps,
       calendarsData      : cals,
       autoSetConstraints : true,
+      statusDate         : new Date(),
     },
   }
 
@@ -143,12 +152,20 @@ export function makeViewGanttConfig(raw: TimelineData | null | undefined): Brynt
 
   base.features = {
     ...(base.features || {}),
-    taskDrag    : false,
-    taskResize  : false,
-    taskEdit    : false,
-    percentBar  : false,
-    labels      : true
+    taskMenuBeforeShow : () => false,
+    taskDrag     : false,
+    taskResize   : false,
+    taskEdit     : false,
+    percentBar   : false,
+    labels       : true,
+    timeRanges   : true,
+
   }
+// keep this too:
+  base.timeRangesFeature = base.timeRangesFeature ?? {
+    showCurrentTimeLine : { name : 'Today' }
+  }
+
 
   return base as unknown as BryntumGanttProps
 }
