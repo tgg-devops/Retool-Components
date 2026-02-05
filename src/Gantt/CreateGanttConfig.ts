@@ -6,12 +6,14 @@ import type {
   ProjectModelConfig,
 } from '@bryntum/gantt'
 import type { BryntumGanttProps } from '@bryntum/gantt-react'
+export type PeopleMap = Record<string, string>
 
 export interface TimelineData {
   project?: ProjectModelConfig
   tasks?: { rows: TaskModelConfig[] }
   dependencies?: { rows: DependencyModelConfig[] }
   calendars?: { rows: CalendarModelConfig[] }
+  peopleMap?: PeopleMap
 }
 
 function findDateRange(rows: any[]): { min?: Date; max?: Date } {
@@ -50,12 +52,13 @@ export const DEFAULT_TIMELINE_DATA: TimelineData = {
   tasks: { rows: [] },
   dependencies: { rows: [] },
   calendars: { rows: [] },
+  peopleMap: {}
 }
 
 // ✅ your existing editable config (keep as-is)
 export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGanttProps {
   const data: TimelineData = raw ?? DEFAULT_TIMELINE_DATA
-
+  const peopleMap = data.peopleMap ?? {}
   const project: ProjectModelConfig = data.project ?? {}
   const tasks: TaskModelConfig[] = data.tasks?.rows ?? []
   const deps: DependencyModelConfig[] = data.dependencies?.rows ?? []
@@ -79,18 +82,6 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
     columns: [
       { type: 'name', field: 'name', width: 200 },
       {
-        text: 'Assigned To',
-        field: 'assignedTp',
-        width: 120,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        renderer: ({ record }: { record: any }) => {
-          const person = (record.assignedUserLabel ?? '').toString().trim()
-          if (person) return person
-          const team = (record.assignedTeamLabel ?? '').toString().trim()
-          return team || ''
-        },
-      },
-      {
         text: 'Cost',
         field: 'projectedCost',
         width: 120,
@@ -106,34 +97,27 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
     viewPreset: 'weekAndDayLetter',
     barMargin: 10,
 
-    features: {
-      taskDrag  : true,
-      taskResize: true,
-      taskEdit  : {
-        items: {
-          generalTab: {
-            items: {
-              assignedTeam: {
-                type: 'text',
-                name: 'assignedTeam',
-                label: 'Assigned Team',
-              },
-              assignedIndividual: {
-                type: 'text',
-                name: 'assignedIndividual',
-                label: 'Assigned Person',
-              },
-              cost: {
-                type: 'number',
-                name: 'cost',
-                label: 'Cost',
-              },
-            },
-          },
-        },
-      },
+    // inside config in makeGanttConfig()
+
+    features : {
+      taskDrag   : true,
+      taskResize : true,
+      labels     : true   // 🔑 REQUIRED
     },
 
+    labelsFeature : {
+      after : {
+        renderer : ({ taskRecord }: any) => {
+          const id =
+            taskRecord.assignedIndividual ??   // <-- change if needed
+            taskRecord.assignee_user_id ??
+            taskRecord.assignedUserId
+
+          if (!id) return ''
+          return peopleMap[String(id)] ?? ''   // show blank if unknown
+        }
+      }
+    },
     project: {
       ...project,
       tasksData          : tasks,
@@ -156,14 +140,16 @@ export function makeViewGanttConfig(raw: TimelineData | null | undefined): Brynt
   base.endDate   = max ?? base.endDate
 
   base.readOnly = false
+
   base.features = {
-    taskDrag: false,
-    taskResize: false,
-    taskEdit: false,
-    percentBar: false,
+    ...(base.features || {}),
+    taskDrag    : false,
+    taskResize  : false,
+    taskEdit    : false,
+    percentBar  : false,
+    labels      : true
   }
 
   return base as unknown as BryntumGanttProps
 }
-
 

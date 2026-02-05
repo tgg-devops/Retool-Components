@@ -31,20 +31,28 @@ function coerceToTimelineData(value: unknown): TimelineData {
   const deps    = (obj.dependencies || DEFAULT_TIMELINE_DATA.dependencies) as TimelineData['dependencies']
   const cals    = (obj.calendars || DEFAULT_TIMELINE_DATA.calendars) as TimelineData['calendars']
 
+  // ✅ NEW
+  const peopleMap = (obj.peopleMap || DEFAULT_TIMELINE_DATA.peopleMap) as TimelineData['peopleMap']
+
   const collapsedTasks = {
     rows: collapseAllExpandedFlags(((tasks as any)?.rows as any[]) || []),
   }
 
-  return { project, tasks: collapsedTasks as any, dependencies: deps, calendars: cals }
+  // ✅ include peopleMap
+  return { project, tasks: collapsedTasks as any, dependencies: deps, calendars: cals, peopleMap }
 }
+
 
 export const ViewGanttImpl: React.FC = () => {
   const [timelineDataState] = Retool.useStateObject({ name: 'timelineData' })
+  const [peopleMapState] = Retool.useStateObject({ name: 'peopleMap' })
 
-  const timelineData: TimelineData = useMemo(
-    () => coerceToTimelineData(timelineDataState as unknown),
-    [timelineDataState]
-  )
+
+  const timelineData: TimelineData = useMemo(() => {
+    const base = coerceToTimelineData(timelineDataState as unknown)
+    const pm   = (peopleMapState && typeof peopleMapState === 'object') ? (peopleMapState as any) : {}
+    return { ...base, peopleMap: pm }
+  }, [timelineDataState, peopleMapState])
 
   const ganttConfig = useMemo(
     () => makeViewGanttConfig(timelineData),
