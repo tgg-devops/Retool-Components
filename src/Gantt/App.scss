@@ -1,39 +1,82 @@
-/* Make task bar color follow our status class.
-   Bryntum renders task bars with .b-gantt-task-wrap / .b-gantt-task / .b-taskbar depending on version.
-   We style broadly to catch your build. */
 
-.tg-complete .b-taskbar,
-.tg-complete .b-gantt-task,
-.tg-complete .b-gantt-task-wrap {
-    background-color: #16a34a !important; /* green */
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Thin.otf') format('opentype');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
 }
 
-.tg-behind .b-taskbar,
-.tg-behind .b-gantt-task,
-.tg-behind .b-gantt-task-wrap {
-    background-color: #dc2626 !important; /* red */
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Light.otf') format('opentype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
 }
 
-.tg-warning .b-taskbar,
-.tg-warning .b-gantt-task,
-.tg-warning .b-gantt-task-wrap {
-    background-color: #f97316 !important; /* orange */
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Book.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
 }
 
-.tg-ontrack .b-taskbar,
-.tg-ontrack .b-gantt-task,
-.tg-ontrack .b-gantt-task-wrap {
-    background-color: #eab308 !important; /* yellow */
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Medium.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
 }
 
-.tg-not-yet .b-taskbar,
-.tg-not-yet .b-gantt-task,
-.tg-not-yet .b-gantt-task-wrap {
-    background-color: #94a3b8 !important; /* grey */
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
 }
 
-/* Optional: keep text readable */
-.tg-not-yet .b-task-name,
-.tg-behind .b-task-name {
-    color: #fff !important;
+
+:root {
+    --bryntum-font-family: 'Gotham', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
+.b-gantt,
+.b-gantt * {
+    font-family: var(--bryntum-font-family) !important;
+}
+.b-grid-header-text {
+    font-weight: 400;
+}
+
+.b-task-name,
+.b-gantt-task {
+    font-weight: 300;
+}
+
+.b-button,
+.b-toolbar,
+.b-menu-item {
+    font-weight: 300;
+}
+
+
+
+/* Task labels */
+.b-task-name,
+.b-gantt-task {
+    font-weight: 400;
+}
+
+/* Menus / toolbars */
+.b-button,
+.b-menu-item,
+.b-toolbar {
+    font-weight: 500;
+}
+
+

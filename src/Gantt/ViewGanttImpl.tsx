@@ -68,6 +68,40 @@ export const ViewGanttImpl: React.FC = () => {
     })
   }, [timelineDataState])
 
+  useEffect(() => {
+    // 1) Inject Gotham stylesheet into the iframe document
+    const href =
+      'https://cdn.jsdelivr.net/npm/gotham-fonts@1.0.3/css/gotham-rounded.min.css'
+
+    const existing = document.querySelector(`link[data-gotham="1"]`) as HTMLLinkElement | null
+
+    const link = existing ?? document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = href
+    link.setAttribute('data-gotham', '1')
+
+    if (!existing) document.head.appendChild(link)
+
+    // 2) Force Bryntum's font var + fallback hard override
+    const styleExisting = document.querySelector(`style[data-bryntum-font="1"]`) as HTMLStyleElement | null
+    const style = styleExisting ?? document.createElement('style')
+    style.setAttribute('data-bryntum-font', '1')
+    style.textContent = `
+    :root {
+      --bryntum-font-family: 'Gotham Rounded', 'Gotham', -apple-system,
+        BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .b-gantt, .b-gantt * {
+      font-family: var(--bryntum-font-family) !important;
+    }
+  `
+    if (!styleExisting) document.head.appendChild(style)
+
+    return () => {
+    }
+  }, [])
+
+
   // ✅ HARD KILL SWITCH: disable ALL right-click menus inside the gantt (capture phase)
   useEffect(() => {
     const root = wrapperRef.current
