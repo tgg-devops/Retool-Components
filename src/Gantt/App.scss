@@ -1,6 +1,39 @@
-/* src/Gantt/App.scss */
+/* Make task bar color follow our status class.
+   Bryntum renders task bars with .b-gantt-task-wrap / .b-gantt-task / .b-taskbar depending on version.
+   We style broadly to catch your build. */
 
-/* Make the Bryntum gantt element fill its container */
-.b-gantt {
-    height: 100%;
+.tg-complete .b-taskbar,
+.tg-complete .b-gantt-task,
+.tg-complete .b-gantt-task-wrap {
+    background-color: #16a34a !important; /* green */
+}
+
+.tg-behind .b-taskbar,
+.tg-behind .b-gantt-task,
+.tg-behind .b-gantt-task-wrap {
+    background-color: #dc2626 !important; /* red */
+}
+
+.tg-warning .b-taskbar,
+.tg-warning .b-gantt-task,
+.tg-warning .b-gantt-task-wrap {
+    background-color: #f97316 !important; /* orange */
+}
+
+.tg-ontrack .b-taskbar,
+.tg-ontrack .b-gantt-task,
+.tg-ontrack .b-gantt-task-wrap {
+    background-color: #eab308 !important; /* yellow */
+}
+
+.tg-not-yet .b-taskbar,
+.tg-not-yet .b-gantt-task,
+.tg-not-yet .b-gantt-task-wrap {
+    background-color: #94a3b8 !important; /* grey */
+}
+
+/* Optional: keep text readable */
+.tg-not-yet .b-task-name,
+.tg-behind .b-task-name {
+    color: #fff !important;
 }

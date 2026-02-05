@@ -40,6 +40,52 @@ function findDateRange(rows: any[]): { min?: Date; max?: Date } {
   ;(rows || []).forEach(walk)
   return { min, max }
 }
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function clamp01(n: number) {
+  return Math.max(0, Math.min(1, n))
+}
+
+function getTaskHealthClass(taskRecord: any, today = new Date()): string {
+  const pct = Number(taskRecord.percentDone ?? taskRecord.percentComplete ?? 0) // Bryntum uses percentDone
+  if (pct >= 100) return 'tg-complete' // ✅ Green
+
+  const start = taskRecord.startDate ? new Date(taskRecord.startDate) : null
+  const end   = taskRecord.endDate ? new Date(taskRecord.endDate) : null
+  if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return ''
+
+  const t = startOfDay(today).getTime()
+  const s = startOfDay(start).getTime()
+  const e = startOfDay(end).getTime()
+
+  // Not yet relevant (hasn't started yet) -> Grey
+  if (t < s) return 'tg-not-yet'
+
+  // If we are past the end date and not complete -> Red
+  if (t > e) return 'tg-behind'
+
+  const duration = e - s
+  if (duration <= 0) return ''
+
+  const elapsedFrac = clamp01((t - s) / duration)      // how far through time window we are
+  const progressFrac = clamp01(pct / 100)              // how complete we are
+
+  // Behind schedule: progress lags elapsed time (with a little tolerance)
+  // e.g. 40% of time elapsed but only 10% done => behind
+  if (progressFrac + 0.10 < elapsedFrac) return 'tg-behind' // ✅ Red
+
+  // Orange: last 10% of time remaining (i.e. >= 90% elapsed) but not done
+  if (elapsedFrac >= 0.90) return 'tg-warning' // ✅ Orange
+
+  // In progress and doing fine -> Yellow
+  if (progressFrac > 0 && progressFrac < 1) return 'tg-ontrack' // ✅ Yellow
+
+  // Default: started but 0% done (treat as on track or not started; choose)
+  return 'tg-ontrack'
+}
+
 
 export const DEFAULT_TIMELINE_DATA: TimelineData = {
   project: {
@@ -73,11 +119,36 @@ export function makeGanttConfig(raw: TimelineData | null | undefined): BryntumGa
     maximumFractionDigits: 0,
   })
 
+
   const config = {
     readOnly: false,
 
     startDate,
     endDate,
+    taskRenderer : ({ taskRecord, renderData }: any) => {
+      const cls = getTaskHealthClass(taskRecord)
+
+      // Clear any prior status classes (important when rerendering)
+      if (renderData?.cls) {
+        delete renderData.cls['tg-complete']
+        delete renderData.cls['tg-behind']
+        delete renderData.cls['tg-warning']
+        delete renderData.cls['tg-ontrack']
+        delete renderData.cls['tg-not-yet']
+      }
+
+      renderData.cls = renderData.cls || {}
+      if (cls) renderData.cls[cls] = true
+
+      renderData.eventColor = ({
+        'tg-complete': '#16a34a',
+        'tg-behind'  : '#dc2626',
+        'tg-warning' : '#f97316',
+        'tg-ontrack' : '#eab308',
+        'tg-not-yet' : '#94a3b8'
+      } as any)[cls]
+
+    },
 
     columns: [
       { type: 'name', field: 'name', width: 200 },
