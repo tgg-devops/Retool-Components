@@ -1,6 +1,82 @@
-/* src/Gantt/App.scss */
 
-/* Make the Bryntum gantt element fill its container */
-.b-gantt {
-    height: 100%;
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Thin.otf') format('opentype');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
 }
+
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Light.otf') format('opentype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Book.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Medium.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Gotham';
+    src: url('./assets/Gotham/Gotham-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+:root {
+    --bryntum-font-family: 'Gotham', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.b-gantt,
+.b-gantt * {
+    font-family: var(--bryntum-font-family) !important;
+}
+.b-grid-header-text {
+    font-weight: 400;
+}
+
+.b-task-name,
+.b-gantt-task {
+    font-weight: 300;
+}
+
+.b-button,
+.b-toolbar,
+.b-menu-item {
+    font-weight: 300;
+}
+
+
+
+/* Task labels */
+.b-task-name,
+.b-gantt-task {
+    font-weight: 400;
+}
+
+/* Menus / toolbars */
+.b-button,
+.b-menu-item,
+.b-toolbar {
+    font-weight: 500;
+}
+
+

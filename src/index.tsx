@@ -1,7 +1,7 @@
 // src/index.tsx
 import React from 'react';
 import { CreateGanttImpl } from './Gantt/CreateGanttImpl';
-import { ViewGanttImpl } from './Gantt/ViewGanttImpl.tsx';
+import { ViewGanttImpl } from './Gantt/ViewGanttImpl';
 
 
 export const CreateGantt: React.FC = () => {

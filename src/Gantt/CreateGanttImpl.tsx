@@ -3,7 +3,7 @@ import React, { useMemo, useState, useCallback, memo, useRef, useEffect } from '
 import { BryntumGantt as BryntumGanttBase } from '@bryntum/gantt-react'
 import { Retool } from '@tryretool/custom-component-support'
 
-import { makeGanttConfig, DEFAULT_TIMELINE_DATA, type TimelineData } from './CreateGanttConfig'
+import { makeGanttConfig, DEFAULT_TIMELINE_DATA, type TimelineData, makeViewGanttConfig } from './CreateGanttConfig'
 
 import '@bryntum/gantt/fontawesome/css/fontawesome.css'
 import '@bryntum/gantt/fontawesome/css/solid.css'
@@ -17,18 +17,21 @@ function coerceToTimelineData(value: unknown): TimelineData {
   const obj = value as Record<string, unknown>
 
   const project = (obj.project || DEFAULT_TIMELINE_DATA.project) as TimelineData['project']
-  const tasks = (obj.tasks || DEFAULT_TIMELINE_DATA.tasks) as TimelineData['tasks']
-  const deps = (obj.dependencies || DEFAULT_TIMELINE_DATA.dependencies) as TimelineData['dependencies']
-  const cals = (obj.calendars || DEFAULT_TIMELINE_DATA.calendars) as TimelineData['calendars']
-
-  return { project, tasks, dependencies: deps, calendars: cals }
+  const tasks   = (obj.tasks || DEFAULT_TIMELINE_DATA.tasks) as TimelineData['tasks']
+  const deps    = (obj.dependencies || DEFAULT_TIMELINE_DATA.dependencies) as TimelineData['dependencies']
+  const cals    = (obj.calendars || DEFAULT_TIMELINE_DATA.calendars) as TimelineData['calendars']
+  const peopleMap = (obj.peopleMap || DEFAULT_TIMELINE_DATA.peopleMap) as TimelineData['peopleMap']
+  return { project, tasks: tasks as any, dependencies: deps, calendars: cals, peopleMap }
 }
+
 
 const MemoGantt = memo(BryntumGanttBase)
 
 export const CreateGanttImpl: React.FC = () => {
   // INPUT from Retool
   const [timelineDataState] = Retool.useStateObject({ name: 'timelineData' })
+  const [peopleMapState] = Retool.useStateObject({ name: 'peopleMap' })
+
 
   // Seed Bryntum once; Bryntum owns live edits internally
   const [initialTimeline] = useState<TimelineData>(() =>
@@ -48,7 +51,16 @@ export const CreateGanttImpl: React.FC = () => {
 
   const ganttRef = useRef<any>(null)
 
-  const ganttConfig = useMemo(() => makeGanttConfig(initialTimeline), [initialTimeline])
+  const timelineData: TimelineData = useMemo(() => {
+    const base = coerceToTimelineData(timelineDataState as unknown)
+    const pm   = (peopleMapState && typeof peopleMapState === 'object') ? (peopleMapState as any) : {}
+    return { ...base, peopleMap: pm }
+  }, [timelineDataState, peopleMapState])
+
+  const ganttConfig = useMemo(
+    () => makeGanttConfig(timelineData),
+    [timelineData]
+  )
 
   // ✅ Whenever Bryntum data changes, write persistable diff to finalTimeline
   const handleDataChange = useCallback(() => {
